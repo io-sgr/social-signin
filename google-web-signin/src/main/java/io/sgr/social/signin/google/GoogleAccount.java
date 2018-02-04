@@ -17,7 +17,6 @@
 package io.sgr.social.signin.google;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import io.sgr.oauth.core.utils.Preconditions;
 
 /**

@@ -56,7 +56,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javaee.api.version>7.0</javaee.api.version>
         <google.api.version>1.23.0</google.api.version>
-        <oauth.lib.version>1.0.0</oauth.lib.version>
+        <oauth.lib.version>1.0.1-SNAPSHOT</oauth.lib.version>
     </properties>
 
     <modules>

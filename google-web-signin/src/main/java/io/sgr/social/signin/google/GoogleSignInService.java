@@ -16,6 +16,8 @@
  */
 package io.sgr.social.signin.google;
 
+import static io.sgr.oauth.core.utils.Preconditions.isEmptyString;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
@@ -26,20 +28,18 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import io.sgr.oauth.client.core.OAuthClientConfig;
 import io.sgr.oauth.client.core.OAuthHttpClient;
-import io.sgr.oauth.client.core.exceptions.MissingRefreshTokenException;
 import io.sgr.oauth.client.googlehttp.OAuthGoogleHttpClient;
 import io.sgr.oauth.core.OAuthCredential;
-import io.sgr.oauth.core.exceptions.OAuthError;
 import io.sgr.oauth.core.exceptions.OAuthException;
 import io.sgr.oauth.core.exceptions.UnrecoverableOAuthException;
 import io.sgr.oauth.core.utils.Preconditions;
 import io.sgr.oauth.core.v20.GrantType;
+import io.sgr.oauth.core.v20.OAuthError;
 import io.sgr.oauth.core.v20.ParameterStyle;
 import io.sgr.oauth.core.v20.ResponseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
@@ -47,6 +47,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author SgrAlpha
@@ -105,15 +107,15 @@ public final class GoogleSignInService implements Closeable {
 	 */
 	public final String getAuthorizationUrl(String redirectUri, String secureState, String accessType, String loginHint, Boolean includeGrantedScopes, String extraScopes, String prompts) {
 		String scope = "profile email";
-		if (!Preconditions.isEmptyString(extraScopes)) {
+		if (!isEmptyString(extraScopes)) {
 			scope = scope + " " + extraScopes;
 		}
 
 		Map<String, String> props = new HashMap<>();
-		if (!Preconditions.isEmptyString(accessType)) {
+		if (!isEmptyString(accessType)) {
 			props.put("access_type", accessType);
 		}
-		if (!Preconditions.isEmptyString(loginHint)) {
+		if (!isEmptyString(loginHint)) {
 			props.put("login_hint", loginHint);
 		}
 		if (includeGrantedScopes != null) {
@@ -158,7 +160,7 @@ public final class GoogleSignInService implements Closeable {
 					throw e;
 				} catch (OAuthException e) {
 					OAuthError err = e.getError();
-					LOGGER.warn(String.format("Unable to get access token because of [%s]%s, retry after %d second(s).", err.getName(), err.getDescription(), interval));
+					LOGGER.warn(String.format("Unable to get access token because of [%s]%s, retry after %d second(s).", err.getName(), err.getErrorDescription(), interval));
 				}
 				TimeUnit.SECONDS.sleep(interval++);
 				retryCnt++;
@@ -179,7 +181,7 @@ public final class GoogleSignInService implements Closeable {
 	}
 
 	public final GoogleAccount parseUserIdentity(String idToken) {
-		if (Preconditions.isEmptyString(idToken)) {
+		if (isEmptyString(idToken)) {
 			return null;
 		}
 		LOGGER.debug(String.format("Found ID token %s, verifying user's identity ...", idToken));
@@ -198,12 +200,12 @@ public final class GoogleSignInService implements Closeable {
 			}
 		} catch (UnrecoverableOAuthException e) {
 			OAuthError err = e.getError();
-			LOGGER.debug(String.format("No luck identify current user with because of [%s]%s.", err.getName(), err.getDescription()));
+			LOGGER.debug(String.format("No luck identify current user with because of [%s]%s.", err.getName(), err.getErrorDescription()));
 			account = null;
 		}
 
 		LOGGER.debug("Try refresh the access token ...");
-		if (Preconditions.isEmptyString(credential.getRefreshToken())) {
+		if (isEmptyString(credential.getRefreshToken())) {
 			throw new UnrecoverableOAuthException(new OAuthError("blank_token", "No access token or refresh token, even ID token found."));
 		}
 		try {
@@ -224,8 +226,8 @@ public final class GoogleSignInService implements Closeable {
 	 * 				Exception when refreshing OAuth credential
 	 */
 	public final OAuthCredential refreshToken(String refreshToken) throws UnrecoverableOAuthException {
-		if (Preconditions.isEmptyString(refreshToken)) {
-			throw new MissingRefreshTokenException();
+		if (isEmptyString(refreshToken)) {
+			throw new UnrecoverableOAuthException(new OAuthError("missing_refresh_token", "Cannot refresh access token without refresh token"));
 		}
 		int interval = 1;
 		int retryCnt = 0;
@@ -240,12 +242,12 @@ public final class GoogleSignInService implements Closeable {
 				}
 				LOGGER.debug(String.format("Refreshing access token with refresh token %s.", refreshToken));
 				try {
-					return this.oauthClient.refreshToken(ParameterStyle.BODY, refreshToken, GrantType.REFRESH_TOKEN);
+					return this.oauthClient.refreshToken(ParameterStyle.BODY, refreshToken);
 				} catch (UnrecoverableOAuthException e) {
 					throw e;
 				} catch (OAuthException e) {
 					OAuthError err = e.getError();
-					LOGGER.warn(String.format("Unable to refresh access token because of [%s]%s, retry after %d second(s).", err.getName(), err.getDescription(), interval));
+					LOGGER.warn(String.format("Unable to refresh access token because of [%s]%s, retry after %d second(s).", err.getName(), err.getErrorDescription(), interval));
 				}
 				TimeUnit.SECONDS.sleep(interval++);
 				retryCnt++;
@@ -264,7 +266,7 @@ public final class GoogleSignInService implements Closeable {
 	 * 			Exception when revoking OAuth token
 	 */
 	public final void revokeToken(String token) throws UnrecoverableOAuthException {
-		if (Preconditions.isEmptyString(token)) {
+		if (isEmptyString(token)) {
 			LOGGER.debug("Null or blank OAuth token, nothing to revoke.");
 			return;
 		}
@@ -287,7 +289,7 @@ public final class GoogleSignInService implements Closeable {
 					throw e;
 				} catch (OAuthException e) {
 					OAuthError err = e.getError();
-					LOGGER.warn(String.format("Unable to revoke token because of [%s]%s, retry after %d second(s).", err.getName(), err.getDescription(), interval));
+					LOGGER.warn(String.format("Unable to revoke token because of [%s]%s, retry after %d second(s).", err.getName(), err.getErrorDescription(), interval));
 				}
 				TimeUnit.SECONDS.sleep(interval++);
 				retryCnt++;
@@ -317,7 +319,7 @@ public final class GoogleSignInService implements Closeable {
 			url.append(":").append(serverPort);
 		}
 		url.append(contextPath);
-		if (!Preconditions.isEmptyString(relativePath)) {
+		if (!isEmptyString(relativePath)) {
 			url.append(relativePath);
 		}
 		return url.toString();
@@ -349,7 +351,7 @@ public final class GoogleSignInService implements Closeable {
 					throw e;
 				} catch (OAuthException e) {
 					OAuthError err = e.getError();
-					LOGGER.warn(String.format("Unable to get account info because of [%s]%s, retry after %d second(s).", err.getName(), err.getDescription(), interval));
+					LOGGER.warn(String.format("Unable to get account info because of [%s]%s, retry after %d second(s).", err.getName(), err.getErrorDescription(), interval));
 				}
 				TimeUnit.SECONDS.sleep(interval++);
 				retryCnt++;
@@ -402,25 +404,25 @@ public final class GoogleSignInService implements Closeable {
 
 	private static GoogleAccount idTokenPayloadToGoogleAccount(Payload payload) {
 		String id = payload.getSubject();
-		if (Preconditions.isEmptyString(id)) {
+		if (isEmptyString(id)) {
 			LOGGER.error("No subject ID found in ID token payload, please check your scope settings.");
 			return null;
 		}
 	
 		String email = payload.getEmail();
-		if (Preconditions.isEmptyString(email)) {
+		if (isEmptyString(email)) {
 			LOGGER.error("No email found in ID token payload, please check your scope settings.");
 			return null;
 		}
 		//		boolean emailVerified = Boolean.valueOf(payload.getEmailVerified());
 		//		LOGGER.debug(String.format("email: %s (verified: %s)", email, emailVerified));
 		String name = (String) payload.get("name");
-		if (Preconditions.isEmptyString(name)) {
+		if (isEmptyString(name)) {
 			name = "John/Jane Doe";
 		}
 		//		LOGGER.debug(String.format("name: %s", name));
 		String pictureUrl = (String) payload.get("picture");
-		if (Preconditions.isEmptyString(pictureUrl)) {
+		if (isEmptyString(pictureUrl)) {
 			pictureUrl = "https://ssl.gstatic.com/accounts/ui/avatar_1x.png";
 		}
 		//		LOGGER.debug(String.format("pictureUrl: %s", pictureUrl));
