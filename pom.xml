@@ -26,7 +26,7 @@
 
     <groupId>io.sgr.social</groupId>
     <artifactId>social-signin-parent</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Social Sign-in Utilities</name>
@@ -43,7 +43,7 @@
         <connection>scm:git:git@github.com:io-sgr/social-signin.git</connection>
         <developerConnection>scm:git:git@github.com:io-sgr/social-signin.git</developerConnection>
         <url>https://github.com/sgr-io/social-signin</url>
-        <tag>v1.0.1</tag>
+        <tag>HEAD</tag>
     </scm>
     <developers>
         <developer>
