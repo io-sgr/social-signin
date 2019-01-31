@@ -18,7 +18,6 @@ package io.sgr.social.signin.google;
 
 import static io.sgr.oauth.core.utils.Preconditions.isEmptyString;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
@@ -33,7 +32,6 @@ import io.sgr.oauth.core.OAuthCredential;
 import io.sgr.oauth.core.exceptions.OAuthException;
 import io.sgr.oauth.core.exceptions.UnrecoverableOAuthException;
 import io.sgr.oauth.core.utils.Preconditions;
-import io.sgr.oauth.core.v20.GrantType;
 import io.sgr.oauth.core.v20.OAuthError;
 import io.sgr.oauth.core.v20.ParameterStyle;
 import io.sgr.oauth.core.v20.ResponseType;
@@ -155,7 +153,7 @@ public final class GoogleSignInService implements Closeable {
 					break;
 				}
 				try {
-					return this.oauthClient.retrieveAccessToken(ParameterStyle.BODY, code, GrantType.AUTHORIZATION_CODE, redirectUri);
+					return this.oauthClient.getAccessTokenByAuthorizationCode(ParameterStyle.BODY, code, redirectUri);
 				} catch (UnrecoverableOAuthException e) {
 					throw e;
 				} catch (OAuthException e) {
@@ -192,16 +190,9 @@ public final class GoogleSignInService implements Closeable {
 		if (credential == null) {
 			throw new UnrecoverableOAuthException(new OAuthError("blank_credential", "No credential found."));
 		}
-		GoogleAccount account;
-		try {
-			account = this.queryCurrentAccountInfo(credential);
-			if (account != null) {
-				return account;
-			}
-		} catch (UnrecoverableOAuthException e) {
-			OAuthError err = e.getError();
-			LOGGER.debug(String.format("No luck identify current user with because of [%s]%s.", err.getName(), err.getErrorDescription()));
-			account = null;
+		GoogleAccount account = this.parseUserIdentity(credential);
+		if (account != null) {
+			return account;
 		}
 
 		LOGGER.debug("Try refresh the access token ...");
@@ -210,7 +201,7 @@ public final class GoogleSignInService implements Closeable {
 		}
 		try {
 			credential = this.refreshToken(credential.getRefreshToken());
-			account = this.queryCurrentAccountInfo(credential);
+			account = this.parseUserIdentity(credential);
 		} catch (UnrecoverableOAuthException e) {
 			throw e;
 		}
@@ -325,44 +316,6 @@ public final class GoogleSignInService implements Closeable {
 		return url.toString();
 	}
 
-	private GoogleAccount queryCurrentAccountInfo(OAuthCredential credential) throws UnrecoverableOAuthException {
-		GoogleAccount account = null;
-		int interval = 1;
-		int retryCnt = 0;
-		try {
-			while (!Thread.interrupted()) {
-				if (interval > 30) {
-					interval = 30;
-				}
-				if (retryCnt >= 30) {
-					LOGGER.warn("Maximium retry exceeded, unable to revoke token.");
-					break;
-				}
-				try {
-					JsonNode person = this.oauthClient.getRawResource(credential, "https://www.googleapis.com/plus/v1/people/me", "fields", "id,displayName,emails,image");
-					account = jsonNodeToGoogleAccount(person);
-					if (account != null) {
-						LOGGER.debug(String.format("Found valid account info: %s", account));
-					} else {
-						LOGGER.error(String.format("Failed to parse account info from %s", person.toString()));
-					}
-					break;
-				} catch (UnrecoverableOAuthException e) {
-					throw e;
-				} catch (OAuthException e) {
-					OAuthError err = e.getError();
-					LOGGER.warn(String.format("Unable to get account info because of [%s]%s, retry after %d second(s).", err.getName(), err.getErrorDescription(), interval));
-				}
-				TimeUnit.SECONDS.sleep(interval++);
-				retryCnt++;
-			}
-		} catch (InterruptedException ie) {
-			LOGGER.info("Cancelling ...");
-			Thread.currentThread().interrupt();
-		}
-		return account;
-	}
-
 	private static GoogleAccount parseGoogleAccountFromIdToken(String clientId, String idTokenString) {
 		Preconditions.notEmptyString(clientId, "OAuth client ID should be provided.");
 		Preconditions.notEmptyString(idTokenString, "IdToken should be provided.");
@@ -433,26 +386,6 @@ public final class GoogleSignInService implements Closeable {
 		//		LOGGER.debug(String.format("Full Name: %s,%s", familyName, givenName));
 	
 		return new GoogleAccount(id, email, name, pictureUrl);
-	}
-
-	private static GoogleAccount jsonNodeToGoogleAccount(JsonNode person) {
-		if (person == null) {
-			return null;
-		}
-		if (person.hasNonNull("id") && person.hasNonNull("emails") && person.get("emails").isArray() && person.get("emails").elements().hasNext() && person.hasNonNull("displayName")) {
-			String id = person.get("id").asText();
-			JsonNode emailNode = person.get("emails").elements().next();
-			String email = emailNode.get("value").asText();
-			String displayName = person.get("displayName").asText();
-			String imageURL;
-			if (person.hasNonNull("image") && person.get("image").hasNonNull("url")) {
-				imageURL = person.get("image").get("url").asText();
-			} else {
-				imageURL = "https://ssl.gstatic.com/accounts/ui/avatar_1x.png";
-			}
-			return new GoogleAccount(id, email, displayName, imageURL);
-		}
-		return null;
 	}
 
 	/**
