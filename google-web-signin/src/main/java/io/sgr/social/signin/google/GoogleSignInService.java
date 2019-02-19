@@ -17,6 +17,7 @@
 package io.sgr.social.signin.google;
 
 import static io.sgr.oauth.core.utils.Preconditions.isEmptyString;
+import static io.sgr.oauth.core.utils.Preconditions.notEmptyString;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
@@ -31,7 +32,6 @@ import io.sgr.oauth.client.googlehttp.OAuthGoogleHttpClient;
 import io.sgr.oauth.core.OAuthCredential;
 import io.sgr.oauth.core.exceptions.OAuthException;
 import io.sgr.oauth.core.exceptions.UnrecoverableOAuthException;
-import io.sgr.oauth.core.utils.Preconditions;
 import io.sgr.oauth.core.v20.OAuthError;
 import io.sgr.oauth.core.v20.ParameterStyle;
 import io.sgr.oauth.core.v20.ResponseType;
@@ -67,9 +67,10 @@ public final class GoogleSignInService implements Closeable {
 	public GoogleSignInService(OAuthClientConfig clientConfig) {
 		OAuthClientConfig config = clientConfig;
 		if (config == null) {
-			LOGGER.debug("No OAuth client config specifed, scanning classpath ...");
+			LOGGER.debug("No OAuth client config specified, scanning classpath ...");
 			try {
 				config = OAuthClientConfig.readFromClasspath("social/google/client.json");
+				LOGGER.debug("Found OAuth client config from classpath: social/google/client.json");
 			} catch (Throwable e) {
 				throw new RuntimeException("Unable to read OAuth client config from classpath: social/google/client.json", e);
 			}
@@ -137,7 +138,7 @@ public final class GoogleSignInService implements Closeable {
 	 * 			The redirect URI to receive access token
 	 * @return
 	 * 			The OAuth credential
-	 * @throws UnrecoverableOAuthException 
+	 * @throws UnrecoverableOAuthException
 	 * 			Exception when retrieving access token
 	 */
 	public final OAuthCredential getAccessToken(String code, String redirectUri) throws UnrecoverableOAuthException {
@@ -213,7 +214,7 @@ public final class GoogleSignInService implements Closeable {
 	 * 				The refresh token used to fresh new OAuth credential
 	 * @return
 	 * 				The OAuth credential
-	 * @throws UnrecoverableOAuthException 
+	 * @throws UnrecoverableOAuthException
 	 * 				Exception when refreshing OAuth credential
 	 */
 	public final OAuthCredential refreshToken(String refreshToken) throws UnrecoverableOAuthException {
@@ -253,7 +254,7 @@ public final class GoogleSignInService implements Closeable {
 	/**
 	 * @param token
 	 * 			The OAuth token to revoke
-	 * @throws UnrecoverableOAuthException 
+	 * @throws UnrecoverableOAuthException
 	 * 			Exception when revoking OAuth token
 	 */
 	public final void revokeToken(String token) throws UnrecoverableOAuthException {
@@ -317,25 +318,26 @@ public final class GoogleSignInService implements Closeable {
 	}
 
 	private static GoogleAccount parseGoogleAccountFromIdToken(String clientId, String idTokenString) {
-		Preconditions.notEmptyString(clientId, "OAuth client ID should be provided.");
-		Preconditions.notEmptyString(idTokenString, "IdToken should be provided.");
-	
+		notEmptyString(clientId, "OAuth client ID should be provided.");
+		notEmptyString(idTokenString, "IdToken should be provided.");
+
 		GoogleIdTokenVerifier oldVerifier = new GoogleIdTokenVerifier.Builder(getDefaultHttpTransport(), getDefaultJsonFactory())
 				.setAudience(Collections.singletonList(clientId))
 				// For Android Play Services older than 8.3 and web client
 				.setIssuer("accounts.google.com")
 				.build();
-	
+
 		GoogleIdTokenVerifier newVerifier = new GoogleIdTokenVerifier.Builder(getDefaultHttpTransport(), getDefaultJsonFactory())
 				.setAudience(Collections.singletonList(clientId))
 				// For Android Play Services newer than 8.3
 				.setIssuer("https://accounts.google.com")
 				.build();
-	
+
 		GoogleIdToken idToken;
 		try {
 			idToken = oldVerifier.verify(idTokenString);
 			if (idToken == null) {
+				LOGGER.debug("Unable to verify id token with old verifier, testing new verifier ...");
 				idToken = newVerifier.verify(idTokenString);
 			}
 		} catch (Exception e) {
@@ -346,12 +348,12 @@ public final class GoogleSignInService implements Closeable {
 			LOGGER.warn(String.format("Invalid or expired Google ID token: %s", idTokenString));
 			return null;
 		}
-	
+
 		Payload payload = idToken.getPayload();
 		for (Entry<String, Object> entry : payload.entrySet()) {
 			LOGGER.trace(String.format("%s=%s", entry.getKey(), entry.getValue()));
 		}
-	
+
 		return idTokenPayloadToGoogleAccount(payload);
 	}
 
@@ -361,7 +363,7 @@ public final class GoogleSignInService implements Closeable {
 			LOGGER.error("No subject ID found in ID token payload, please check your scope settings.");
 			return null;
 		}
-	
+
 		String email = payload.getEmail();
 		if (isEmptyString(email)) {
 			LOGGER.error("No email found in ID token payload, please check your scope settings.");
@@ -384,7 +386,7 @@ public final class GoogleSignInService implements Closeable {
 		//		String familyName = (String) payload.get("family_name");
 		//		String givenName = (String) payload.get("given_name");
 		//		LOGGER.debug(String.format("Full Name: %s,%s", familyName, givenName));
-	
+
 		return new GoogleAccount(id, email, name, pictureUrl);
 	}
 
