@@ -354,6 +354,13 @@ public final class GoogleSignInService implements Closeable {
 			LOGGER.trace(String.format("%s=%s", entry.getKey(), entry.getValue()));
 		}
 
+		final String issuer = payload.getIssuer();
+		if (isEmptyString(issuer)
+				|| (!"accounts.google.com".equalsIgnoreCase(issuer) && !"https://accounts.google.com".equalsIgnoreCase(issuer))) {
+			LOGGER.warn("Invalid issuer '{}'", issuer);
+			return null;
+		}
+
 		return idTokenPayloadToGoogleAccount(payload);
 	}
 
