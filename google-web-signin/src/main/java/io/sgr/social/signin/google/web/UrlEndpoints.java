@@ -14,16 +14,16 @@
  * limitations under the License.
  *
  */
+
 package io.sgr.social.signin.google.web;
 
 /**
  * @author SgrAlpha
- *
  */
 public class UrlEndpoints {
 
-	public static final String PATH_CONNECT = "/social/google/connect";
-	public static final String PATH_CALLBACK = "/social/google/callback";
-	public static final String PATH_DISCONNECT = "/social/google/disconnect";
-	
+    public static final String PATH_CONNECT = "/social/google/connect";
+    public static final String PATH_CALLBACK = "/social/google/callback";
+    public static final String PATH_DISCONNECT = "/social/google/disconnect";
+
 }

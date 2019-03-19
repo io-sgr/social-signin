@@ -14,6 +14,7 @@
  * limitations under the License.
  *
  */
+
 package io.sgr.social.signin.google.web;
 
 import static io.sgr.oauth.core.utils.Preconditions.isEmptyString;
@@ -22,6 +23,7 @@ import io.sgr.oauth.client.core.OAuthClientConfig;
 import io.sgr.oauth.core.exceptions.UnrecoverableOAuthException;
 import io.sgr.oauth.core.v20.OAuthError;
 import io.sgr.social.signin.google.GoogleSignInService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,54 +37,53 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author SgrAlpha
- *
  */
 public abstract class GooglePlusDisconnectServlet extends HttpServlet {
 
-	private static final long serialVersionUID = -8496741505555090807L;
+    private static final long serialVersionUID = -8496741505555090807L;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GooglePlusDisconnectServlet.class.getName());
-	
-	private GoogleSignInService service;
+    private static final Logger LOGGER = LoggerFactory.getLogger(GooglePlusDisconnectServlet.class.getName());
 
-	@Override
-	public void init(ServletConfig conf) throws ServletException {
-		this.service = new GoogleSignInService(this.getOAuthClientConfig());
-	}
+    private GoogleSignInService service;
 
-	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		LOGGER.debug("Finding token to revoke ...");
-		String token = req.getParameter("token");
-		if (!isEmptyString(token)) {
-			try {
-				this.service.revokeToken(token);
-			} catch (UnrecoverableOAuthException e) {
-				OAuthError err = e.getError();
-				LOGGER.warn(String.format("Unable to revoke token %s because [%s]%s", token, err.getName(), err.getErrorDescription()));
-			}
-		} else {
-			LOGGER.debug("No token found in parameter, skipping ...");
-		}
-		this.postSignOut(req, resp);
-	}
-	
-	protected OAuthClientConfig getOAuthClientConfig() {
-		return null;
-	}
-	
-	protected abstract void postSignOut(HttpServletRequest req, HttpServletResponse resp) throws IOException;
-	
-	@Override
-	public void destroy() {
-		super.destroy();
-		try {
-			if (this.service != null) {
-				this.service.close();
-			}
-		} catch (IOException e) {
-			LOGGER.error(e.getMessage(), e);
-		}
-	}
-	
+    @Override
+    public void init(ServletConfig conf) throws ServletException {
+        this.service = new GoogleSignInService(this.getOAuthClientConfig());
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        LOGGER.debug("Finding token to revoke ...");
+        String token = req.getParameter("token");
+        if (!isEmptyString(token)) {
+            try {
+                this.service.revokeToken(token);
+            } catch (UnrecoverableOAuthException e) {
+                OAuthError err = e.getError();
+                LOGGER.warn(String.format("Unable to revoke token %s because [%s]%s", token, err.getName(), err.getErrorDescription()));
+            }
+        } else {
+            LOGGER.debug("No token found in parameter, skipping ...");
+        }
+        this.postSignOut(req, resp);
+    }
+
+    protected OAuthClientConfig getOAuthClientConfig() {
+        return null;
+    }
+
+    protected abstract void postSignOut(HttpServletRequest req, HttpServletResponse resp) throws IOException;
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        try {
+            if (this.service != null) {
+                this.service.close();
+            }
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
+    }
+
 }

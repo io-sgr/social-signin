@@ -14,55 +14,56 @@
  * limitations under the License.
  *
  */
+
 package io.sgr.social.signin.google;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import io.sgr.oauth.core.utils.Preconditions;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * @author SgrAlpha
- *
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GoogleAccount {
-	
-	private final String id;
-	private final String email;
-	private final String displayName;
-	private final String avatarUrl;
-	
-	/**
-	 * @param id
-	 * 			The user id from social network, could be a serial number
-	 * @param email
-	 * 			The user's email from social network
-	 * @param displayName
-	 * 			The display name of the user 
-	 * @param avatarUrl
-	 * 			The profile image URL of the user
-	 */
-	public GoogleAccount(String id, String email, String displayName, String avatarUrl) {
-		Preconditions.notEmptyString(id, "ID should be provided");
-		this.id = id;
-		this.email = email;
-		this.displayName = displayName;
-		this.avatarUrl = avatarUrl;
-	}
-	
-	public String getId() {
-		return this.id;
-	}
 
-	public String getEmail() {
-		return this.email;
-	}
+    private final String id;
+    private final String email;
+    private final String displayName;
+    private final String avatarUrl;
 
-	public String getDisplayName() {
-		return this.displayName;
-	}
+    /**
+     * @param id
+     *         The user id from social network, could be a serial number
+     * @param email
+     *         The user's email from social network
+     * @param displayName
+     *         The display name of the user
+     * @param avatarUrl
+     *         The profile image URL of the user
+     */
+    public GoogleAccount(String id, String email, String displayName, String avatarUrl) {
+        Preconditions.notEmptyString(id, "ID should be provided");
+        this.id = id;
+        this.email = email;
+        this.displayName = displayName;
+        this.avatarUrl = avatarUrl;
+    }
 
-	public String getAvatarUrl() {
-		return this.avatarUrl;
-	}
+    public String getId() {
+        return this.id;
+    }
+
+    public String getEmail() {
+        return this.email;
+    }
+
+    public String getDisplayName() {
+        return this.displayName;
+    }
+
+    public String getAvatarUrl() {
+        return this.avatarUrl;
+    }
 
 }
