@@ -32,7 +32,7 @@
 
     <name>Social Sign-in Utilities</name>
     <description>A simple social sign-in library</description>
-    <url>https://github.com/sgr-io/social-signin</url>
+    <url>https://github.com/io-sgr/social-signin</url>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -43,7 +43,7 @@
     <scm>
         <connection>scm:git:git@github.com:io-sgr/social-signin.git</connection>
         <developerConnection>scm:git:git@github.com:io-sgr/social-signin.git</developerConnection>
-        <url>https://github.com/sgr-io/social-signin</url>
+        <url>https://github.com/io-sgr/social-signin</url>
         <tag>HEAD</tag>
     </scm>
     <developers>
