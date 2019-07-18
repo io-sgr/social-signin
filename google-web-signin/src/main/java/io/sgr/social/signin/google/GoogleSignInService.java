@@ -20,6 +20,13 @@ package io.sgr.social.signin.google;
 import static io.sgr.oauth.core.utils.Preconditions.isEmptyString;
 import static io.sgr.oauth.core.utils.Preconditions.notEmptyString;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import io.sgr.oauth.client.core.OAuthClientConfig;
 import io.sgr.oauth.client.core.OAuthHttpClient;
 import io.sgr.oauth.client.googlehttp.OAuthGoogleHttpClient;
@@ -29,14 +36,6 @@ import io.sgr.oauth.core.exceptions.UnrecoverableOAuthException;
 import io.sgr.oauth.core.v20.OAuthError;
 import io.sgr.oauth.core.v20.ParameterStyle;
 import io.sgr.oauth.core.v20.ResponseType;
-
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,7 +107,7 @@ public final class GoogleSignInService implements Closeable {
      *         first time your app requests access.
      * @return The authorization URL
      */
-    public final String getAuthorizationUrl(String redirectUri, String secureState, String accessType, String loginHint, Boolean includeGrantedScopes,
+    public String getAuthorizationUrl(String redirectUri, String secureState, String accessType, String loginHint, Boolean includeGrantedScopes,
             String extraScopes, String prompts) {
         String scope = "profile email";
         if (!isEmptyString(extraScopes)) {
@@ -145,7 +144,7 @@ public final class GoogleSignInService implements Closeable {
      * @throws UnrecoverableOAuthException
      *         Exception when retrieving access token
      */
-    public final OAuthCredential getAccessToken(String code, String redirectUri) throws UnrecoverableOAuthException {
+    public OAuthCredential getAccessToken(String code, String redirectUri) throws UnrecoverableOAuthException {
         int interval = 1;
         int retryCnt = 0;
         try {
@@ -177,7 +176,7 @@ public final class GoogleSignInService implements Closeable {
         return null;
     }
 
-    public final GoogleAccount parseUserIdentity(OAuthCredential credential) {
+    public GoogleAccount parseUserIdentity(OAuthCredential credential) {
         if (credential != null && credential.getExtraParams() != null && !credential.getExtraParams().isEmpty()
                 && credential.getExtraParams().get("id_token") != null) {
             String idToken = credential.getExtraParams().get("id_token").toString();
@@ -186,7 +185,7 @@ public final class GoogleSignInService implements Closeable {
         return null;
     }
 
-    public final GoogleAccount parseUserIdentity(String idToken) {
+    public GoogleAccount parseUserIdentity(String idToken) {
         if (isEmptyString(idToken)) {
             return null;
         }
@@ -194,7 +193,7 @@ public final class GoogleSignInService implements Closeable {
         return parseGoogleAccountFromIdToken(this.oauthClient.getOAuthClientConfig().clientId, idToken);
     }
 
-    public final GoogleAccount getUserIdentity(OAuthCredential credential) throws UnrecoverableOAuthException {
+    public GoogleAccount getUserIdentity(OAuthCredential credential) throws UnrecoverableOAuthException {
         if (credential == null) {
             throw new UnrecoverableOAuthException(new OAuthError("blank_credential", "No credential found."));
         }
@@ -223,7 +222,7 @@ public final class GoogleSignInService implements Closeable {
      * @throws UnrecoverableOAuthException
      *         Exception when refreshing OAuth credential
      */
-    public final OAuthCredential refreshToken(String refreshToken) throws UnrecoverableOAuthException {
+    public OAuthCredential refreshToken(String refreshToken) throws UnrecoverableOAuthException {
         if (isEmptyString(refreshToken)) {
             throw new UnrecoverableOAuthException(new OAuthError("missing_refresh_token", "Cannot refresh access token without refresh token"));
         }
@@ -264,7 +263,7 @@ public final class GoogleSignInService implements Closeable {
      * @throws UnrecoverableOAuthException
      *         Exception when revoking OAuth token
      */
-    public final void revokeToken(String token) throws UnrecoverableOAuthException {
+    public void revokeToken(String token) throws UnrecoverableOAuthException {
         if (isEmptyString(token)) {
             LOGGER.debug("Null or blank OAuth token, nothing to revoke.");
             return;
@@ -383,23 +382,14 @@ public final class GoogleSignInService implements Closeable {
             LOGGER.error("No email found in ID token payload, please check your scope settings.");
             return null;
         }
-        //		boolean emailVerified = Boolean.valueOf(payload.getEmailVerified());
-        //		LOGGER.debug(String.format("email: %s (verified: %s)", email, emailVerified));
         String name = (String) payload.get("name");
         if (isEmptyString(name)) {
             name = "John/Jane Doe";
         }
-        //		LOGGER.debug(String.format("name: %s", name));
         String pictureUrl = (String) payload.get("picture");
         if (isEmptyString(pictureUrl)) {
             pictureUrl = "https://ssl.gstatic.com/accounts/ui/avatar_1x.png";
         }
-        //		LOGGER.debug(String.format("pictureUrl: %s", pictureUrl));
-        //		String locale = (String) payload.get("locale");
-        //		LOGGER.debug(String.format("locale: %s", locale));
-        //		String familyName = (String) payload.get("family_name");
-        //		String givenName = (String) payload.get("given_name");
-        //		LOGGER.debug(String.format("Full Name: %s,%s", familyName, givenName));
 
         return new GoogleAccount(id, email, name, pictureUrl);
     }

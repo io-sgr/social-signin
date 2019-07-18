@@ -21,8 +21,8 @@
 
     <parent>
         <groupId>io.sgr</groupId>
-        <artifactId>io.sgr</artifactId>
-        <version>1.0.5</version>
+        <artifactId>io.sgr.base</artifactId>
+        <version>1.0.7</version>
     </parent>
 
     <groupId>io.sgr.social</groupId>
@@ -54,13 +54,11 @@
     </developers>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.targetJdk>1.8</project.build.targetJdk>
 
-        <javaee.api.version>7.0</javaee.api.version>
-        <google.api.version>1.28.0</google.api.version>
-        <oauth.lib.version>1.0.1</oauth.lib.version>
+        <dep.oauth.version>1.0.2</dep.oauth.version>
+
+        <dep.google.api.version>1.28.0</dep.google.api.version>
     </properties>
 
     <modules>
@@ -70,22 +68,43 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>io.sgr</groupId>
+                <artifactId>common-dependencies</artifactId>
+                <version>1.0.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.sgr.oauth</groupId>
+                <artifactId>oauth-core</artifactId>
+                <version>${dep.oauth.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.sgr.oauth</groupId>
+                <artifactId>oauth-client-core</artifactId>
+                <version>${dep.oauth.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.sgr.oauth</groupId>
                 <artifactId>oauth-client-googlehttp</artifactId>
-                <version>${oauth.lib.version}</version>
+                <version>${dep.oauth.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpclient</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
+
             <dependency>
                 <groupId>com.google.api-client</groupId>
                 <artifactId>google-api-client</artifactId>
-                <version>${google.api.version}</version>
+                <version>${dep.google.api.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.google.guava</groupId>
                         <artifactId>guava-jdk5</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>com.fasterxml.jackson.core</groupId>
@@ -94,111 +113,16 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>javax</groupId>
-                <artifactId>javaee-api</artifactId>
-                <version>${javaee.api.version}</version>
-                <scope>provided</scope>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client</artifactId>
+                <version>${dep.google.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client-jackson2</artifactId>
+                <version>${dep.google.api.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <!-- select non-aggregate reports -->
-                            <report>report</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-        </plugins>
-    </reporting>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.0</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>3.0.1</version>
-                    <executions>
-                        <execution>
-                            <id>attach-sources</id>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.0.1</version>
-                    <configuration>
-                        <quiet>true</quiet>
-                        <nonavbar>true</nonavbar>
-                        <notree>true</notree>
-                        <nocomment>true</nocomment>
-                        <nohelp>true</nohelp>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>attach-javadocs</id>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.jacoco</groupId>
-                    <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.3</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>prepare-agent</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>report</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>report</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
 
 </project>
