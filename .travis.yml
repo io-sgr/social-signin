@@ -8,5 +8,7 @@ cache:
   directories:
     - $HOME/.m2
 
+install: travis_wait mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+
 after_success:
   - bash <(curl -s https://codecov.io/bash)
